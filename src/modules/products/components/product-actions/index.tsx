@@ -2,6 +2,7 @@
 
 import { addToCart } from "@lib/data/cart"
 import { useIntersection } from "@lib/hooks/use-in-view"
+import { getPricesForVariant } from "@lib/util/get-product-price"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@medusajs/ui"
 import Divider from "@modules/common/components/divider"
@@ -58,6 +59,13 @@ export default function ProductActions({
       return isEqual(variantOptions, options)
     })
   }, [product.variants, options])
+
+  const selectedVariantPrice = useMemo(() => {
+    if (!selectedVariant) {
+      return null
+    }
+    return getPricesForVariant(selectedVariant)
+  }, [selectedVariant])
 
   // update the options when a variant is selected
   const setOptionValue = (optionId: string, value: string) => {
@@ -130,6 +138,7 @@ export default function ProductActions({
       variantId: selectedVariant.id,
       quantity: 1,
       countryCode,
+      finalPrice: selectedVariantPrice?.final_price_number,
     })
 
     setIsAdding(false)

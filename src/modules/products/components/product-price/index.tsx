@@ -31,9 +31,9 @@ export default function ProductPrice({
         {!variant && "From "}
         <span
           data-testid="product-price"
-          data-value={selectedPrice.calculated_price_number}
+          data-value={selectedPrice.final_price_number}
         >
-          {selectedPrice.calculated_price}
+          {selectedPrice.final_price}
         </span>
       </span>
       {selectedPrice.price_type === "sale" && (

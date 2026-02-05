@@ -91,7 +91,7 @@ const MobileActions: React.FC<MobileActionsProps> = ({
                         selectedPrice.price_type === "sale",
                     })}
                   >
-                    {selectedPrice.calculated_price}
+                    {selectedPrice.final_price}
                   </span>
                 </div>
               ) : (

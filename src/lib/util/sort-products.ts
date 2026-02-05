@@ -1,5 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
+import { getFinalPriceAmount } from "./get-product-price"
 
 interface MinPricedProduct extends HttpTypes.StoreProduct {
   _minPrice?: number
@@ -23,7 +24,7 @@ export function sortProducts(
       if (product.variants && product.variants.length > 0) {
         product._minPrice = Math.min(
           ...product.variants.map(
-            (variant) => variant?.calculated_price?.calculated_amount || 0
+            (variant) => getFinalPriceAmount(variant) ?? 0
           )
         )
       } else {

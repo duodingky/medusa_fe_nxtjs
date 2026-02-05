@@ -118,10 +118,12 @@ export async function addToCart({
   variantId,
   quantity,
   countryCode,
+  finalPrice,
 }: {
   variantId: string
   quantity: number
   countryCode: string
+  finalPrice?: number
 }) {
   if (!variantId) {
     throw new Error("Missing variant ID when adding to cart")
@@ -137,16 +139,14 @@ export async function addToCart({
     ...(await getAuthHeaders()),
   }
 
-  await sdk.store.cart
-    .createLineItem(
-      cart.id,
-      {
-        variant_id: variantId,
-        quantity,
-      },
-      {},
-      headers
-    )
+  type CreateLineItemInput = Parameters<typeof sdk.store.cart.createLineItem>[1]
+  const lineItem: CreateLineItemInput & { final_price?: number } = {
+    variant_id: variantId,
+    quantity,
+    ...(Number.isFinite(finalPrice) ? { final_price: finalPrice } : {}),
+  }
+
+  await sdk.store.cart.createLineItem(cart.id, lineItem, {}, headers)
     .then(async () => {
       const cartCacheTag = await getCacheTag("carts")
       revalidateTag(cartCacheTag)
