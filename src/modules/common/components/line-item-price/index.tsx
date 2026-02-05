@@ -9,14 +9,39 @@ type LineItemPriceProps = {
   currencyCode: string
 }
 
+const toAmount = (value: unknown) => {
+  if (typeof value === "number") {
+    return Number.isNaN(value) ? null : value
+  }
+
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value)
+    return Number.isNaN(parsed) ? null : parsed
+  }
+
+  return null
+}
+
 const LineItemPrice = ({
   item,
   style = "default",
   currencyCode,
 }: LineItemPriceProps) => {
-  const { total, original_total } = item
-  const originalPrice = original_total
-  const currentPrice = total
+  const quantity = item.quantity || 1
+  const variantCalculatedPrice = (item.variant as any)?.calculated_price
+  const variantFinalAmount = toAmount(variantCalculatedPrice?.final_price)
+  const variantOriginalAmount = toAmount(variantCalculatedPrice?.original_amount)
+
+  const fallbackTotal = item.total ?? 0
+  const currentPrice =
+    (item as any).final_total ??
+    (variantFinalAmount != null ? variantFinalAmount * quantity : null) ??
+    fallbackTotal
+  const originalPrice =
+    (item as any).final_original_total ??
+    (variantOriginalAmount != null ? variantOriginalAmount * quantity : null) ??
+    item.original_total ??
+    currentPrice
   const hasReducedPrice = currentPrice < originalPrice
 
   return (

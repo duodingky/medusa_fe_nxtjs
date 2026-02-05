@@ -8,17 +8,48 @@ type LineItemUnitPriceProps = {
   currencyCode: string
 }
 
+const toAmount = (value: unknown) => {
+  if (typeof value === "number") {
+    return Number.isNaN(value) ? null : value
+  }
+
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value)
+    return Number.isNaN(parsed) ? null : parsed
+  }
+
+  return null
+}
+
 const LineItemUnitPrice = ({
   item,
   style = "default",
   currencyCode,
 }: LineItemUnitPriceProps) => {
-  const { total, original_total } = item
-  const hasReducedPrice = total < original_total
+  const quantity = item.quantity || 1
+  const variantCalculatedPrice = (item.variant as any)?.calculated_price
+  const variantFinalAmount = toAmount(variantCalculatedPrice?.final_price)
+  const variantOriginalAmount = toAmount(variantCalculatedPrice?.original_amount)
 
-  const percentage_diff = Math.round(
-    ((original_total - total) / original_total) * 100
-  )
+  const fallbackTotal = item.total ?? 0
+  const totalPrice =
+    (item as any).final_total ??
+    (variantFinalAmount != null ? variantFinalAmount * quantity : null) ??
+    fallbackTotal
+  const originalTotalPrice =
+    (item as any).final_original_total ??
+    (variantOriginalAmount != null ? variantOriginalAmount * quantity : null) ??
+    item.original_total ??
+    totalPrice
+
+  const unitPrice = totalPrice / quantity
+  const originalUnitPrice = originalTotalPrice / quantity
+  const hasReducedPrice = unitPrice < originalUnitPrice
+
+  const percentage_diff =
+    originalUnitPrice > 0
+      ? Math.round(((originalUnitPrice - unitPrice) / originalUnitPrice) * 100)
+      : 0
 
   return (
     <div className="flex flex-col text-ui-fg-muted justify-center h-full">
@@ -33,7 +64,7 @@ const LineItemUnitPrice = ({
               data-testid="product-unit-original-price"
             >
               {convertToLocale({
-                amount: original_total / item.quantity,
+                amount: originalUnitPrice,
                 currency_code: currencyCode,
               })}
             </span>
@@ -50,7 +81,7 @@ const LineItemUnitPrice = ({
         data-testid="product-unit-price"
       >
         {convertToLocale({
-          amount: total / item.quantity,
+          amount: unitPrice,
           currency_code: currencyCode,
         })}
       </span>

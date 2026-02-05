@@ -3,27 +3,30 @@ import { getPercentageDiff } from "./get-percentage-diff"
 import { convertToLocale } from "./money"
 
 export const getPricesForVariant = (variant: any) => {
-  if (!variant?.calculated_price?.calculated_amount) {
+  const calculatedPrice = variant?.calculated_price
+  const calculatedAmount =
+    calculatedPrice?.final_price ?? calculatedPrice?.calculated_amount
+
+  if (calculatedAmount == null) {
     return null
   }
 
+  const originalAmount = calculatedPrice?.original_amount ?? calculatedAmount
+
   return {
-    calculated_price_number: variant.calculated_price.calculated_amount,
+    calculated_price_number: calculatedAmount,
     calculated_price: convertToLocale({
-      amount: variant.calculated_price.calculated_amount,
-      currency_code: variant.calculated_price.currency_code,
+      amount: calculatedAmount,
+      currency_code: calculatedPrice?.currency_code,
     }),
-    original_price_number: variant.calculated_price.original_amount,
+    original_price_number: originalAmount,
     original_price: convertToLocale({
-      amount: variant.calculated_price.original_amount,
-      currency_code: variant.calculated_price.currency_code,
+      amount: originalAmount,
+      currency_code: calculatedPrice?.currency_code,
     }),
-    currency_code: variant.calculated_price.currency_code,
-    price_type: variant.calculated_price.calculated_price.price_list_type,
-    percentage_diff: getPercentageDiff(
-      variant.calculated_price.original_amount,
-      variant.calculated_price.calculated_amount
-    ),
+    currency_code: calculatedPrice?.currency_code,
+    price_type: calculatedPrice?.calculated_price?.price_list_type,
+    percentage_diff: getPercentageDiff(originalAmount, calculatedAmount),
   }
 }
 

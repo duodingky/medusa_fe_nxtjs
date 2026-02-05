@@ -35,7 +35,11 @@ const CartDropdown = ({
       return acc + item.quantity
     }, 0) || 0
 
-  const subtotal = cartState?.subtotal ?? 0
+  const subtotal =
+    (cartState as any)?.final_subtotal ??
+    cartState?.subtotal ??
+    (cartState as any)?.item_subtotal ??
+    0
   const itemRef = useRef<number>(totalItems || 0)
 
   const timedOpen = () => {

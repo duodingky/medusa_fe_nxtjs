@@ -23,7 +23,10 @@ export function sortProducts(
       if (product.variants && product.variants.length > 0) {
         product._minPrice = Math.min(
           ...product.variants.map(
-            (variant) => variant?.calculated_price?.calculated_amount || 0
+            (variant) =>
+              variant?.calculated_price?.final_price ??
+              variant?.calculated_price?.calculated_amount ??
+              0
           )
         )
       } else {
