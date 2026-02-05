@@ -21,10 +21,15 @@ import { getLocale } from "@lib/data/locale-actions"
  * @param cartId - optional - The ID of the cart to retrieve.
  * @returns The cart object if found, or null if not found.
  */
+const DEFAULT_CART_FIELDS =
+  "*items, *region, *items.product, *items.variant, *items.variant.calculated_price, *items.thumbnail, *items.metadata, +items.total, +items.final_total, +items.final_original_total, +final_total, +final_subtotal, +final_tax_total, +final_item_subtotal, +final_shipping_subtotal, +final_discount_subtotal, *promotions, +shipping_methods.name"
+
+const FALLBACK_CART_FIELDS =
+  "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name"
+
 export async function retrieveCart(cartId?: string, fields?: string) {
   const id = cartId || (await getCartId())
-  fields ??=
-    "*items, *region, *items.product, *items.variant, *items.variant.calculated_price, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name"
+  const resolvedFields = fields ?? DEFAULT_CART_FIELDS
 
   if (!id) {
     return null
@@ -38,18 +43,36 @@ export async function retrieveCart(cartId?: string, fields?: string) {
     ...(await getCacheOptions("carts")),
   }
 
-  return await sdk.client
-    .fetch<HttpTypes.StoreCartResponse>(`/store/carts/${id}`, {
-      method: "GET",
-      query: {
-        fields,
-      },
-      headers,
-      next,
-      cache: "force-cache",
-    })
-    .then(({ cart }: { cart: HttpTypes.StoreCart }) => cart)
-    .catch(() => null)
+  const fetchCart = async (cartFields: string) => {
+    const { cart } = await sdk.client.fetch<HttpTypes.StoreCartResponse>(
+      `/store/carts/${id}`,
+      {
+        method: "GET",
+        query: {
+          fields: cartFields,
+        },
+        headers,
+        next,
+        cache: "force-cache",
+      }
+    )
+
+    return cart
+  }
+
+  try {
+    return await fetchCart(resolvedFields)
+  } catch {
+    if (fields) {
+      return null
+    }
+
+    try {
+      return await fetchCart(FALLBACK_CART_FIELDS)
+    } catch {
+      return null
+    }
+  }
 }
 
 export async function getOrSetCart(countryCode: string) {
