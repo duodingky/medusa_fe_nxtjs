@@ -15,6 +15,32 @@ import {
   setAuthToken,
 } from "./cookies"
 
+type StoreAuthResponse = {
+  token?: string
+  access_token?: string
+}
+
+const fetchStoreAuthToken = async (email: string, password: string) => {
+  const { token, access_token } = await sdk.client.fetch<StoreAuthResponse>(
+    "/store/auth",
+    {
+      method: "POST",
+      body: {
+        email,
+        password,
+      },
+    }
+  )
+
+  const authToken = token ?? access_token
+
+  if (!authToken) {
+    throw new Error("No auth token returned")
+  }
+
+  return authToken
+}
+
 export const retrieveCustomer =
   async (): Promise<HttpTypes.StoreCustomer | null> => {
     const authHeaders = await getAuthHeaders()
@@ -69,29 +95,19 @@ export async function signup(_currentState: unknown, formData: FormData) {
   }
 
   try {
-    const token = await sdk.auth.register("customer", "emailpass", {
-      email: customerForm.email,
-      password: password,
+    const { customer: createdCustomer } = await sdk.client.fetch<{
+      customer: HttpTypes.StoreCustomer
+    }>("/store/customers", {
+      method: "POST",
+      body: {
+        ...customerForm,
+        password,
+      },
     })
 
-    await setAuthToken(token as string)
+    const loginToken = await fetchStoreAuthToken(customerForm.email, password)
 
-    const headers = {
-      ...(await getAuthHeaders()),
-    }
-
-    const { customer: createdCustomer } = await sdk.store.customer.create(
-      customerForm,
-      {},
-      headers
-    )
-
-    const loginToken = await sdk.auth.login("customer", "emailpass", {
-      email: customerForm.email,
-      password,
-    })
-
-    await setAuthToken(loginToken as string)
+    await setAuthToken(loginToken)
 
     const customerCacheTag = await getCacheTag("customers")
     revalidateTag(customerCacheTag)
@@ -109,13 +125,10 @@ export async function login(_currentState: unknown, formData: FormData) {
   const password = formData.get("password") as string
 
   try {
-    await sdk.auth
-      .login("customer", "emailpass", { email, password })
-      .then(async (token) => {
-        await setAuthToken(token as string)
-        const customerCacheTag = await getCacheTag("customers")
-        revalidateTag(customerCacheTag)
-      })
+    const token = await fetchStoreAuthToken(email, password)
+    await setAuthToken(token)
+    const customerCacheTag = await getCacheTag("customers")
+    revalidateTag(customerCacheTag)
   } catch (error: any) {
     return error.toString()
   }
