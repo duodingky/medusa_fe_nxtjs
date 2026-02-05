@@ -35,8 +35,50 @@ const CartDropdown = ({
       return acc + item.quantity
     }, 0) || 0
 
+  const toAmount = (value: unknown) => {
+    if (typeof value === "number") {
+      return Number.isNaN(value) ? null : value
+    }
+
+    if (typeof value === "string" && value.trim() !== "") {
+      let sanitized = value.trim()
+      if (sanitized.includes(",") && sanitized.includes(".")) {
+        sanitized = sanitized.replace(/,/g, "")
+      } else if (sanitized.includes(",") && !sanitized.includes(".")) {
+        sanitized = sanitized.replace(/,/g, ".")
+      }
+
+      sanitized = sanitized.replace(/[^0-9.-]/g, "")
+
+      if (!sanitized || sanitized === "-" || sanitized === ".") {
+        return null
+      }
+
+      const parsed = Number(sanitized)
+      return Number.isNaN(parsed) ? null : parsed
+    }
+
+    return null
+  }
+
+  const computedItemSubtotal = cartState?.items?.length
+    ? cartState.items.reduce((sum, item) => {
+        const quantity = item.quantity || 1
+        const calculatedPrice = (item.variant as any)?.calculated_price
+        const finalAmount = toAmount(calculatedPrice?.final_price)
+        const itemFinalTotal =
+          (item as any).final_total ??
+          (finalAmount != null ? finalAmount * quantity : null) ??
+          item.total ??
+          0
+
+        return sum + itemFinalTotal
+      }, 0)
+    : null
+
   const subtotal =
     (cartState as any)?.final_subtotal ??
+    (computedItemSubtotal != null ? computedItemSubtotal : null) ??
     cartState?.subtotal ??
     (cartState as any)?.item_subtotal ??
     0

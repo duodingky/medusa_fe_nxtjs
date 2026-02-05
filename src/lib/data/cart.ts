@@ -25,7 +25,7 @@ const DEFAULT_CART_FIELDS =
   "*items, *region, *items.product, *items.variant, *items.variant.calculated_price, *items.thumbnail, *items.metadata, +items.total, +items.final_total, +items.final_original_total, +final_total, +final_subtotal, +final_tax_total, +final_item_subtotal, +final_shipping_subtotal, +final_discount_subtotal, *promotions, +shipping_methods.name"
 
 const FALLBACK_CART_FIELDS =
-  "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name"
+  "*items, *region, *items.product, *items.variant, *items.variant.calculated_price, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name"
 
 export async function retrieveCart(cartId?: string, fields?: string) {
   const id = cartId || (await getCartId())

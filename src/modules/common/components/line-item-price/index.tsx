@@ -15,7 +15,20 @@ const toAmount = (value: unknown) => {
   }
 
   if (typeof value === "string" && value.trim() !== "") {
-    const parsed = Number(value)
+    let sanitized = value.trim()
+    if (sanitized.includes(",") && sanitized.includes(".")) {
+      sanitized = sanitized.replace(/,/g, "")
+    } else if (sanitized.includes(",") && !sanitized.includes(".")) {
+      sanitized = sanitized.replace(/,/g, ".")
+    }
+
+    sanitized = sanitized.replace(/[^0-9.-]/g, "")
+
+    if (!sanitized || sanitized === "-" || sanitized === ".") {
+      return null
+    }
+
+    const parsed = Number(sanitized)
     return Number.isNaN(parsed) ? null : parsed
   }
 
